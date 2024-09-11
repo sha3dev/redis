@@ -1,0 +1,45 @@
+{
+  "name": "@sha3/redis",
+  "version": "1.0.0",
+  "description": "Redis Wrapper",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "author": "Juan Carlos Viñas",
+  "license": "MIT",
+  "homepage": "https://github.com/sha3dev/redis#readme",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "tsup ./src"
+  },
+  "dependencies": {
+    "@sha3/logger": "^1.0.1",
+    "redis": "^4.7.0",
+    "snappy": "^7.2.2"
+  },
+  "devDependencies": {
+    "tsup": "^8.1.0",
+    "typescript": "^5.5.3"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sha3dev/redis.git"
+  },
+  "bugs": {
+    "url": "https://github.com/sha3dev/redis/issues"
+  },
+  "files": [
+    "dist",
+    "package.json"
+  ],
+  "exports": {
+    ".": {
+      "require": "./dist/index.js",
+      "import": "./dist/index.mjs",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

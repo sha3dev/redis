@@ -56,6 +56,8 @@ export default class Redis {
 
   private defaultExpInSeconds: number = DEFAULT_EXP_S;
 
+  private pendingRequests: Map<string, Promise<string | null>> = new Map();
+
   /**
    * private: properties
    */
@@ -116,23 +118,35 @@ export default class Redis {
     }
   }
 
-  private async _get(cacheKey: string) {
-    let result = await this.client!.get(cacheKey);
-    if (result && this.options.enableCompression) {
-      try {
-        const buffer = Buffer.from(result, "base64");
-        result = (await snappy.uncompress(buffer, {
-          asBuffer: false,
-        })) as string;
-      } catch (e: any) {
-        result = null;
-        logger.error(`error uncompressing redis value: ${e.message}`);
+  private createFetchPromise(cacheKey: string): Promise<string | null> {
+    return (async () => {
+      let result = await this.client!.get(cacheKey);
+      if (result && this.options.enableCompression) {
+        try {
+          const buffer = Buffer.from(result, "base64");
+          result = (await snappy.uncompress(buffer, {
+            asBuffer: false,
+          })) as string;
+        } catch (e: any) {
+          result = null;
+          logger.error(`error uncompressing redis value: ${e.message}`);
+        }
       }
+      if (this.options.logging) {
+        logger.debug(`get => ${cacheKey} (${result?.length || 0})`);
+      }
+      this.pendingRequests.delete(cacheKey);
+      return result;
+    })();
+  }
+
+  private async _get(cacheKey: string): Promise<string | null> {
+    if (this.pendingRequests.has(cacheKey)) {
+      return this.pendingRequests.get(cacheKey)!;
     }
-    if (this.options.logging) {
-      logger.debug(`get => ${cacheKey} (${result?.length || 0})`);
-    }
-    return result;
+    const fetchPromise = this.createFetchPromise(cacheKey);
+    this.pendingRequests.set(cacheKey, fetchPromise);
+    return fetchPromise;
   }
 
   private async _exists(cacheKey: string) {
